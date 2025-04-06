@@ -42,4 +42,4 @@ class Scheduler:
 
     def run (self) : 
         # # Implement all steps 
-        # # send for gui the occupying list
+        # # send for gui the occupying list 
