@@ -1,34 +1,14 @@
 
 
 class process : 
-    pid = 0  
-    incremental_pid =1  
-    remaining_time = 0
-    arrival_time = 0 
-    completion_time  = 0
-    burst_time = 0 
-    priority = 1 
-
-    def __init__(self , remaing_time , arrival_time) : 
-        self.pid = self.incremental_pid 
-        self.incremental_pid += 1 
-        self.remaining_time =remaing_time 
-        self.burst_time  = remaing_time 
+    def __init__(self, pid, arrival_time, burst_time, priority=None):
+        self.pid = pid
         self.arrival_time = arrival_time
-
-    
-    def __init__(self , remaing_time , arrival_time, priority) : 
-        self.pid = self.incremental_pid 
-        self.incremental_pid += 1 
-        self.remaining_time =remaing_time 
-        self.burst_time  = remaing_time 
-        self.arrival_time = arrival_time   
-        self.priorty= priority  
+        self.burst_time = burst_time
+        self.remaining_time = burst_time
+        self.priority = pid if priority is None else priority
+        self.waiting_time = 0
+        self.turnaround_time = 0
+        self.completion_time = 0
+ 
         
-    def decrement_time(self,current): 
-        if ( self.remaining_time == 1 ) : 
-            self.remaining_time -= 1 ; 
-            self.completion_time = current + 1 
-        else : 
-            self.remaining_time -=1 
-

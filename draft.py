@@ -1,48 +1,45 @@
 class Scheduler:
-    #  list of processes 
-    #  list feha pid occupying cpu  , f kol entry fl array t3ny 1 unit_time 
-    #  occupiny [3]==> htla2y el process ely kant shaghala fl laz7za 3 
-    #  occuping = [ 1 ,1, 1 , 2 , 2,3 ]  process 1 eshtaghlt awl 3 sawany , 
-    # process 2 eshtaghlt mn sanya 3 l sanya 5 , process 3 eshtaghlt mn 5 l 6 
-    # lw round_robin [1,2,3,4,1,2,3,4,1,2,3,4 ,2,3,4,3,3]
+    #occupying = [
+    #  Each entry is a tuple of: (process_id, start_time, end_time)
+    # ("P1", 0, 3),
+    # ("P2", 3, 7),
+    # ("P1", 7, 9),
+#    p1>>>0 ,5                                 
+#    p2>>>1 ,2
+#    p3>>>1 ,2
 
-    def __init__(self, name, age):
-        self.name = name  # Instance attribute
-        self.age = age  # Instance attribute
 
-    def add_process(self, burst_time ) :
+    def __init__(self):
+        self.occupying=[]
+        self.processes = []
+        self.cuurent_tmie=0  
+
+    def add_process(self, process):
+        self.processes.append(process)
+
+
+    
+    def calculate_metrics(self):
+        total_waiting = 0
+        total_turnaround = 0
+        for process in self.processes:
+            process.turnaround_time = process.completion_time - process.arrival_time
+            process.waiting_time = process.turnaround_time - process.burst_time
+            total_waiting += process.waiting_time
+            total_turnaround += process.turnaround_time
         
-    # loop to initalize processes 
-    # processes = process [] 
-
-    # ===============================================
-
-    # case 1 : 2 functions 
-    # wa7da llrun d w wa7da llrun live 
-    def run : 
-        # Implement all steps 
-        # send for gui the occupying list 
-
-
-    def run_live :
+        avg_waiting = total_waiting / len(self.processes)
+        avg_turnaround = total_turnaround / len(self.processes)
+        return avg_waiting, avg_turnaround
     
-        #  hnfdl n3eed fl 5 steps dol 
-
-        #  implement one step //  run algorithm 
-        #  update el gui 
-        #  check for upcoming new process
-        #  delay 0.7 second  
+    def schedule_step(self) #this should return the process object to be selected
+        raise NotImplementedError("Must implement in subclass")
     
-    # =====================================================
+    def AllProcessesCompleted(self) -> bool:
+            "it will be implemented here"
+    def update(): #1)Advance the current_time 2) Update each process's state 3) Update the occupying list 4)Handle process additions
+        raise NotImplementedError("Must implement in subclass")
 
-    # case 2 : 
-    def run_step : 
-        # btafz el algo  //// meen hy7tl el CPU el sanya el gaya // htzawd entry wa7da bs fl occupying array 
-    def run_static : 
-        #  while there is processes 
-            #  run_step()
-    def run_live :
-        #  run_step () 
-        #  update el gui 
-        #  check for upcoming new process
-        #  delay 0.7 second  
+    def run (self) : 
+        # # Implement all steps 
+        # # send for gui the occupying list
