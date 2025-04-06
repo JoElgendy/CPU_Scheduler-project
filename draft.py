@@ -4,42 +4,49 @@ class Scheduler:
     # ("P1", 0, 3),
     # ("P2", 3, 7),
     # ("P1", 7, 9),
-#    p1>>>0 ,5                                 
-#    p2>>>1 ,2
-#    p3>>>1 ,2
-
+    # ............]
+    #    p1>>>0 ,5                                 
+    #    p2>>>1 ,2
+    #    p3>>>1 ,2
 
     def __init__(self):
-        self.occupying=[]
+        self.occupying = []
         self.processes = []
-        self.cuurent_tmie=0  
+        self.currentTime = 0    #Probably wont be needed in FCFS
 
-    def add_process(self, process):
+    def addProcess(self, process):
         self.processes.append(process)
 
 
     
-    def calculate_metrics(self):
-        total_waiting = 0
-        total_turnaround = 0
+    def calculateMetrics(self):
+        totalWaiting = 0
+        totalTurnaround = 0
         for process in self.processes:
-            process.turnaround_time = process.completion_time - process.arrival_time
-            process.waiting_time = process.turnaround_time - process.burst_time
-            total_waiting += process.waiting_time
-            total_turnaround += process.turnaround_time
+            process.turnaroundTime = process.completionTime - process.arrivalTime
+            process.waitingTime = process.turnaroundTime - process.burstTime
+            totalWaiting += process.waitingTime
+            totalTurnaround += process.turnaroundTime
         
-        avg_waiting = total_waiting / len(self.processes)
-        avg_turnaround = total_turnaround / len(self.processes)
-        return avg_waiting, avg_turnaround
+        avgWaiting = totalWaiting / len(self.processes)
+        avgTurnaround = totalTurnaround / len(self.processes)
+        return avgWaiting, avgTurnaround
     
-    def schedule_step(self) #this should return the process object to be selected
+    #This should return the process object to be selected to be given to the update
+    def scheduleStep(self):  
         raise NotImplementedError("Must implement in subclass")
     
+
     def AllProcessesCompleted(self) -> bool:
-            "it will be implemented here"
-    def update(): #1)Advance the current_time 2) Update each process's state 3) Update the occupying list 4)Handle process additions
+        #it will be implemented here
+
+
+    #1)Advance the current_time 2) Update each process's state 3) Update the occupying list 4)Handle process additions
+    def update(self): 
         raise NotImplementedError("Must implement in subclass")
+    
 
     def run (self) : 
-        # # Implement all steps 
-        # # send for gui the occupying list 
+        #Implement all steps 
+        #send for gui the occupying list 
+

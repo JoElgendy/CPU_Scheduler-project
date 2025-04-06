@@ -1,14 +1,12 @@
-
-
-class process : 
-    def __init__(self, pid, arrival_time, burst_time, priority=None):
+class Process : 
+    def __init__(self, pid, arrivalTime, burstTime, priority=None):
         self.pid = pid
-        self.arrival_time = arrival_time
-        self.burst_time = burst_time
-        self.remaining_time = burst_time
+        self.arrivalTime = arrivalTime
+        self.burstTime = burstTime
+        self.remaining_time = burstTime
         self.priority = pid if priority is None else priority
-        self.waiting_time = 0
-        self.turnaround_time = 0
-        self.completion_time = 0
+        self.waitingTime = 0
+        self.turnaroundTime = 0
+        self.completionTime = 0
  
         
