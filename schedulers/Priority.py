@@ -87,15 +87,11 @@ class PriorityScheduler:
 
             # delay (live mode)
             if self.live:
-                # Simulate the passage of time in live mode (allow for process addition)
-                time.sleep(self.time_unit)
+                time.sleep(1)
 
             # Increment the time for both modes
             self.current_time += 1
      
-
-
-
 
 if __name__ == "__main__":
 
@@ -106,5 +102,4 @@ if __name__ == "__main__":
     scheduler.add_process(Process(3, 2, 1, 3))  
     
     scheduler.run()
-    
     scheduler.calculate_metrics()
