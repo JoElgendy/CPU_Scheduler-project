@@ -1,175 +1,196 @@
 import heapq
 import time
 import threading
+from abc import ABC, abstractmethod
+from typing import final
 
-
+# Original Process Class
 class Process:
-    def __init__(self, pid, arrival_time, burst_time, priority):
+    def __init__(self, pid, arrivalTime, burstTime, priority=None):
+        if burstTime <= 0:
+            raise ValueError("Burst time must be positive")
+        else:
+            self.burstTime = burstTime
+        if arrivalTime < 0:
+            raise ValueError("Arrival time cannot be negative")
+        else:
+            self.arrivalTime = arrivalTime
+        
         self.pid = pid
-        self.arrival_time = arrival_time
-        self.burst_time = burst_time
-        self.remaining_time = burst_time
-        self.priority = priority
-        self.start_time = None
-        self.completion_time = None
-
-    def __lt__(self, other):
-        # arranging processes inside heap --> least priority first 
-        return (self.priority, self.arrival_time) < (other.priority, other.arrival_time)
-
+        self.remaining_time = burstTime
+        self.priority = pid if priority is None else priority
+        self.waitingTime = 0
+        self.turnaroundTime = 0
+        self.completionTime = 0
+    
+    def isCompleted(self) -> bool:
+        # Check if the process has completed its execution
+        return self.remaining_time == 0
 
 
-class PriorityScheduler:
+# Original Scheduler Class
+class Scheduler(ABC):
+    def __init__(self):
+        self.occupying: list[int] = []  # Tracks the processes occupying the CPU at each time step
+        self.processes: list[Process] = []  # List of processes
+        self.currentTime: int = 0  # Tracks the current time
+
+    @final
+    def addProcess(self, process: Process) -> None:
+        # Add a new process to the scheduler
+        if not isinstance(process, Process):
+            raise TypeError("Expected a Process object")
+        if process.isCompleted():
+            raise ValueError("Process has already completed")
+        self.processes.append(process)
+    
+    @final
+    def calculateMetrics(self) -> tuple[float, float]:
+        # Calculate average waiting time and turnaround time
+        totalWaiting = 0.0
+        totalTurnaround = 0.0
+        for process in self.processes:
+            process.turnaroundTime = process.completionTime - process.arrivalTime
+            process.waitingTime = process.turnaroundTime - process.burstTime
+            totalWaiting += process.waitingTime
+            totalTurnaround += process.turnaroundTime
+        
+        avgWaiting = totalWaiting / len(self.processes)
+        avgTurnaround = totalTurnaround / len(self.processes)
+        return avgWaiting, avgTurnaround
+    
+    @abstractmethod
+    def scheduleStep(self) -> Process:  
+        raise NotImplementedError("Must implement in subclass")
+    
+    def allProcessesCompleted(self) -> bool:
+        # Check if all processes have completed
+        for process in self.processes:
+            if not process.isCompleted():
+                return False
+        return True
+
+    @abstractmethod
+    def update(self) -> None: 
+        raise NotImplementedError("Must implement in subclass")
+
+
+# Original PriorityScheduler Class (Inherits from Scheduler)
+class PriorityScheduler(Scheduler):
     def __init__(self, preemptive=False, live=False, time_unit=1):
-        self.processes = []
+        super().__init__()
         self.ready_queue = []
-        self.current_time = 0
         self.preemptive = preemptive
         self.live = live
         self.time_unit = time_unit
-        self.gantt_chart = []
         self.running = False
         self.lock = threading.Lock()
-        self.event = threading.Event()  # event to control thread pausing
+        self.event = threading.Event()
+        self.currentProcess = None
 
-    def add_new_process(self, process):
-        # dynamic addition of processes
+    def scheduleStep(self) -> Process:
+        if self.ready_queue:
+            _, _, process = heapq.heappop(self.ready_queue)
+            return process
+        return None
+
+    def update(self) -> None:
         with self.lock:
-            self.processes.append(process)
-            print(f"Process {process.pid} added at time {self.current_time}")
-            self.event.set()  # Signal the run thread to resume
+            for process in self.processes:
+                if process.arrivalTime <= self.currentTime and not process.isCompleted() and \
+                        all(p.pid != process.pid for _, _, p in self.ready_queue) and \
+                        (self.currentProcess is None or self.currentProcess.pid != process.pid):
+                    heapq.heappush(self.ready_queue, (process.priority, process.arrivalTime, process))
 
-    def add_process(self, process):
-        # for adding processes initially
-        self.processes.append(process)
+        if self.preemptive:
+            # Preempt if higher priority is found
+            if self.currentProcess:
+                if self.ready_queue and self.ready_queue[0][0] < self.currentProcess.priority:
+                    heapq.heappush(self.ready_queue, (self.currentProcess.priority, self.currentProcess.arrivalTime, self.currentProcess))
+                    self.currentProcess = self.scheduleStep()
+            else:
+                self.currentProcess = self.scheduleStep()
+
+        else:
+            if self.currentProcess is None:
+                self.currentProcess = self.scheduleStep()
+
+        # Execute current process
+        if self.currentProcess:
+            self.occupying.append(self.currentProcess.pid)
+            self.currentProcess.remaining_time -= 1
+            if self.currentProcess.remaining_time == 0:
+                self.currentProcess.completionTime = self.currentTime + 1
+                self.currentProcess = None
+        else:
+            self.occupying.append(-1)  # idle
+
+        self.currentTime += 1
+        if self.live:
+            time.sleep(self.time_unit)  # Sleep to simulate "live" behavior
 
     def run(self):
-        self.processes.sort(key=lambda p: p.arrival_time)  # sort by arrival time
-        arrived = []  # track the arrived processes 
-        current_process = None
         self.running = True
-
         while self.running:
-            with self.lock:
-                self.processes.sort(key=lambda p: p.arrival_time)
-
-            for p in self.processes:
-                if p.arrival_time <= self.current_time and p not in arrived: # less than in case that a process entered late 
-                    heapq.heappush(self.ready_queue, (p.priority, p.arrival_time, p))
-                    arrived.append(p)
-
-            # in case no processes in queue && no current process running --> exit the loop 
-            if not self.ready_queue and all(p.remaining_time == 0 for p in self.processes) and not current_process:
+            if self.allProcessesCompleted():
                 self.running = False
                 break
+            self.update()
 
-            if self.preemptive:
-                #preemptive
-                if current_process:
-                    if self.ready_queue and self.ready_queue[0][0] < current_process.priority:
-                        
-                        heapq.heappush(self.ready_queue, (current_process.priority, current_process.arrival_time, current_process))
-                        _, _, current_process = heapq.heappop(self.ready_queue)
-                else:
-                    if self.ready_queue:
-                        _, _, current_process = heapq.heappop(self.ready_queue)
-                        if current_process.start_time is None:
-                            current_process.start_time = self.current_time
-
-                # executing current process
-                if current_process:
-                    self.gantt_chart.append((self.current_time, current_process.pid))
-                    current_process.remaining_time -= 1
-                    if current_process.remaining_time == 0:
-                        current_process.completion_time = self.current_time + 1
-                        current_process = None
-
-            else:
-                #  non-preemptive 
-                if current_process is None and self.ready_queue:
-                    _, _, current_process = heapq.heappop(self.ready_queue)
-                    if current_process.start_time is None:
-                        current_process.start_time = self.current_time
-
-                if current_process:
-                    self.gantt_chart.append((self.current_time, current_process.pid))
-                    current_process.remaining_time -= 1
-                    if current_process.remaining_time == 0:
-                        current_process.completion_time = self.current_time + 1
-                        current_process = None
-
-            
-            
-            time.sleep(self.time_unit) # pausing the thread for new processes to be added ( for non-live & live mode ) 
-
-            
-            self.current_time += 1
+    def addProcess(self, process: Process):
+        with self.lock:
+            super().addProcess(process)  # Call parent class's addProcess method
+            print(f"Process {process.pid} added at time {self.currentTime}")
+            self.event.set()
 
 
-    def calculate_metrics(self):
-        total_wt = 0
-        total_tat = 0
-        for p in self.processes:
-            if p.completion_time is None:
-                continue  # Skip processes that have not completed
-            tat = p.completion_time - p.arrival_time
-            wt = tat - p.burst_time
-            total_wt += wt
-            total_tat += tat
-        n = len(self.processes)
-        return total_wt / n, total_tat / n
-
-    def print_gantt_chart(self):
-        print("Gantt Chart:")
-        for t, pid in self.gantt_chart:
-            print(f"|{t}: P{pid}", end=" ")
-        print(f"|{self.current_time}")
-
-
-# Testing Dynamic Addition
-
+# Testing the inheritance and running the scheduler with dynamic additions
 def test_dynamic_addition(preemptive=True, live=False):
-
     scheduler = PriorityScheduler(preemptive=preemptive, live=live, time_unit=1)
 
-    # Initial processes
-    scheduler.add_process(Process(1, 0, 5, 2))  # Process 1: Arrival at t=0, burst time=5, priority=2
-    scheduler.add_process(Process(2, 0, 3, 1))  # Process 2: Arrival at t=0, burst time=3, priority=1
+    scheduler.addProcess(Process(1, 3, 5, 0))
+    scheduler.addProcess(Process(2, 0, 7, 1))
 
-    # create and start a thread
     scheduler_thread = threading.Thread(target=scheduler.run)
     scheduler_thread.start()
-    
-    #adding new processes dynamically when the scheduler is running 
-    
-    time.sleep(2)  
-    scheduler.add_new_process(Process(3, scheduler.current_time, 4, 0))  
-    
-    time.sleep(2) 
-    scheduler.add_new_process(Process(4, scheduler.current_time, 3, 2))  
 
+    time.sleep(2)
+    if(scheduler.live==True):
+        scheduler.addProcess(Process(3, scheduler.currentTime, 4, 0))
     
-    scheduler.add_new_process(Process(5, scheduler.current_time, 6, 1))  
+        time.sleep(2)
+        scheduler.addProcess(Process(4, scheduler.currentTime, 3, 2))
     
-    # wait for thread to finish
+        scheduler.addProcess(Process(5, scheduler.currentTime, 6, 1))
+
     scheduler_thread.join()
 
-    scheduler.print_gantt_chart()
-    avg_wt, avg_tat = scheduler.calculate_metrics()
-    print(f"Average Waiting Time: {avg_wt:.2f}")
+    print("\nGantt Chart:")
+    for t, pid in enumerate(scheduler.occupying):
+        if pid == -1:
+            print(f"|{t}: Idle", end=" ")
+        else:
+            print(f"|{t}: P{pid}", end=" ")
+    print(f"|{scheduler.currentTime}")
+
+    avg_wt, avg_tat = scheduler.calculateMetrics()
+    print(f"\nAverage Waiting Time: {avg_wt:.2f}")
     print(f"Average Turnaround Time: {avg_tat:.2f}")
+    
+    all_done = all(p.isCompleted() for p in scheduler.processes)
+    print(all_done)
 
 
 if __name__ == "__main__":
-
     print("\n=== Running Preemptive Scheduling in Non-Live Mode ===")
-    test_dynamic_addition(preemptive=True, live=False)  # preemptive & non-live
+    test_dynamic_addition(preemptive=True, live=False)
 
     print("\n=== Running Preemptive Scheduling in Live Mode ===")
-    test_dynamic_addition(preemptive=True, live=True)  # preemptive & live
+    test_dynamic_addition(preemptive=True, live=True)
 
     print("\n=== Running Non-Preemptive Scheduling in Non-Live Mode ===")
-    test_dynamic_addition(preemptive=False, live=False)  # non preemptive & non-live
+    test_dynamic_addition(preemptive=False, live=False)
 
     print("\n=== Running Non-Preemptive Scheduling in Live Mode ===")
-    test_dynamic_addition(preemptive=False, live=True)  # non-preemptive & live
+    test_dynamic_addition(preemptive=False, live=True)
+
