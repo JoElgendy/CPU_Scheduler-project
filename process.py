@@ -16,8 +16,11 @@ class Process:
         self.waitingTime = 0
         self.turnaroundTime = 0
         self.completionTime = 0
- 
+    
     def isCompleted(self) -> bool:
         # Check if the process has completed its execution
         return self.remaining_time == 0
+    
+    
+
         
