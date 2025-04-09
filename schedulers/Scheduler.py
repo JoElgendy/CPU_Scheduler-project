@@ -57,10 +57,6 @@ class Scheduler(ABC):
         for process in self.processes:
             if(process.arrivalTime == self.currentTime):
                 self.arrived.append(process)
-            if(process.remainingTime == 0):
-                self.arrived.remove(process)
-            else:
-                pass
     
     #This should save the process object in the variable current process to be selected to be given to the update
     @abstractmethod
