@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+from utils import generate_color
 
 class CPU_Scheduler_GUI:
     def __init__(self, root):
         self.root = root
         self.root.title("CPU Scheduler")
-        self.root.geometry("600x600")
+        self.root.geometry("800x600")
         self.root.config(bg="#f0f0f0")
 
         self.processes = []
@@ -64,6 +64,8 @@ class CPU_Scheduler_GUI:
             self.gantt_chart_frame, text="Gantt Chart:", font=("Arial", 14)
         )
         self.process_label.pack(pady=10)
+
+        self.draw_gantt_chart()
 
     def add_labeled_combobox(self, parent, label_text, var, values, row):
         label = ttk.Label(parent, text=label_text, font=("Arial", 12))
@@ -173,6 +175,57 @@ class CPU_Scheduler_GUI:
         for data in process_data:
             print(data)
         messagebox.showinfo("Success", "Processes added successfully!")
+
+    def draw_gantt_chart(self):
+        canvas_width = 600
+        canvas_height = 200
+        bar_height = 30
+        y_offset = 70
+        x_offset = 10
+
+        self.gantt_canvas = tk.Canvas(self.gantt_chart_frame, width=canvas_width, height=canvas_height, bg="white")
+        self.gantt_canvas.pack()
+
+        # tasks = [1, 1, 2, 3, 2, 2, 2, 1, 1, 1, 1, 5, 4, 3, 2, 5, 3]
+        tasks = [1, 1, 2, 3, 2, 2, 2, 1, 1]
+
+        unit_width = (canvas_width - 2 * x_offset) / len(tasks)
+
+        for idx, task_num in enumerate(tasks):
+            task_name = "P" + str(task_num)
+
+            generated_color = generate_color(task_num)
+
+            # Draw the block for each unit time
+            self.gantt_canvas.create_rectangle(
+                x_offset + idx * unit_width, y_offset,
+                x_offset + (idx + 1) * unit_width, y_offset + bar_height,
+                fill=generated_color
+            )
+    
+            self.create_centered_canvas_text(
+                task_name,
+                self.gantt_canvas,
+                x_offset + unit_width * idx + unit_width / 2,
+                y_offset + 15
+            )
+
+            self.create_centered_canvas_text(
+                idx + 1,
+                self.gantt_canvas,
+                x_offset + unit_width * (idx + 1),
+                y_offset + bar_height + 10,
+                font=("Helvetica", 8),
+                fill="gray"
+            )
+
+    def create_centered_canvas_text(self, text, canvas, x, y, font=("Helvetica", 10), fill="black"):
+        text_id = canvas.create_text(x, y, anchor="w", text=text, font=font, fill=fill)
+
+        bbox = canvas.bbox(text_id)
+        text_width = bbox[2] - bbox[0]
+
+        canvas.coords(text_id, x - text_width / 2, y)
 
     def validate_optional_field(self, field, index, field_name):
         value = field.get()
