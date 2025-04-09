@@ -18,7 +18,7 @@ class Scheduler(ABC):
         self.arrived: list[Process] = []    #This que contains all arrived processes and process with remaining time to be executed    
         self.currentProcess: Process = None #Will contain the current process being executed
         self.currentTime: int = 0
-
+        
     @final
     def addProcess(self, process: Process) -> None:
         # Add a new process to the scheduler
@@ -54,7 +54,6 @@ class Scheduler(ABC):
                 self.arrived.remove(process)
             else:
                 pass
-    
     
     #This should save the process object in the variable current process to be selected to be given to the update
     @abstractmethod

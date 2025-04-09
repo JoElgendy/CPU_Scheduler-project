@@ -5,6 +5,7 @@ class Process:
             raise ValueError("Burst time must be positive")
         else:
             self.burstTime = burstTime
+
         if arrivalTime < 0:
             raise ValueError("Arrival time cannot be negative")
         else:
