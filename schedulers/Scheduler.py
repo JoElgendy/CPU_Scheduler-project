@@ -18,7 +18,14 @@ class Scheduler(ABC):
         self.arrived: list[Process] = []    #This que contains all arrived processes and process with remaining time to be executed    
         self.currentProcess: Process = None #Will contain the current process being executed
         self.currentTime: int = 0
-        
+
+    def allProcessesCompleted(self) -> bool:
+    # Check if all processes have completed
+        for process in self.processes:
+            if not process.isCompleted():
+                return False
+        return True
+
     @final
     def addProcess(self, process: Process) -> None:
         # Add a new process to the scheduler
@@ -47,10 +54,10 @@ class Scheduler(ABC):
     #This will method will ease the algo implementation
     @final
     def arrivedHandler(self) -> None:
-        for process in self.arrived:
+        for process in self.processes:
             if(process.arrivalTime == self.currentTime):
                 self.arrived.append(process)
-            if(process.remaining_time == 0):
+            if(process.remainingTime == 0):
                 self.arrived.remove(process)
             else:
                 pass
