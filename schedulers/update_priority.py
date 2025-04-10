@@ -1,4 +1,4 @@
-import processes.py
+import Processes.py
 import Scheduler.py
 
 class PriorityScheduler(Scheduler):
