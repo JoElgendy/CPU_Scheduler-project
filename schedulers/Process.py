@@ -17,18 +17,11 @@ class Process:
         self.waitingTime = 0
         self.turnaroundTime = 0
         self.completionTime = 0
- 
+    
     def isCompleted(self) -> bool:
         # Check if the process has completed its execution
         return self.remainingTime == 0
+    
+    
 
-    def decrementTime(self, time=1):
-        """
-        This is used to decrement time from the remaing time of the process
-        to simulate running one timeunit on the processor 
-        """
-        if (self.remainingTime == 1): 
-            self.remainingTime -= 1 
-            self.completionTime = time + 1 
-        else : 
-            self.remainingTime -= 1
+        
