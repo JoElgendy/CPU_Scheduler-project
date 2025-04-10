@@ -6,6 +6,7 @@ class RoundRobin(Scheduler):
         super().__init__()
         self.quantumTime = quantumTime
         self.remainQuantumTime = quantumTime
+        self.idle = False
 
     def processToBeExecuted(self):
         while True:
@@ -16,7 +17,10 @@ class RoundRobin(Scheduler):
                 
             # Remove the completed process
             if(self.currentProcess.isCompleted()):
-                self.arrived.remove(self.currentProcess)
+                try:
+                    self.arrived.remove(self.currentProcess)
+                except:
+                    pass
 
             # Check if the next PID is in the arrived processes
             matchingProcess = next((p for p in self.arrived if p.pid == self.nextPID), None)
@@ -31,16 +35,23 @@ class RoundRobin(Scheduler):
     
     def scheduleStep(self):
         super().arrivedHandler()
-        if(self.currentTime == 0):
-            self.currentProcess = self.arrived[0]
-            self.nextPID = self.currentProcess.pid + 1
-            print(self.nextPID)
+        if(self.currentTime == 0) or self.idle == True:
+            try:
+                self.currentProcess = self.arrived[0]
+                self.nextPID = self.currentProcess.pid + 1
+                self.idle = False
+            except:
+                self.idle = True
+                self.currentTime += 1
+                return
+            
 
-        if self.currentProcess.isCompleted() or self.remainQuantumTime == 0:
+        if self.currentProcess is not None and (self.currentProcess.isCompleted() or self.remainQuantumTime == 0):
             self.processToBeExecuted()
             self.remainQuantumTime = self.quantumTime
 
-        self.update()
+        if self.currentProcess is not None:
+            self.update()
 
     def update(self):
         self.currentProcess.remainingTime -= 1
@@ -49,4 +60,3 @@ class RoundRobin(Scheduler):
         self.occupying.append(self.currentProcess.pid)
         if(self.currentProcess.isCompleted()):
             self.currentProcess.completionTime = self.currentTime      
-            
