@@ -56,7 +56,7 @@ class SJF_pre (Scheduler):
 Use case to check the program 
 """
 p1 = Process(1,0,2)
-p2 = Process(2,3,4)
+p2 = Process(2,1,4)
 p3 = Process(3,4,1)
 
 sched = SJF_pre()
