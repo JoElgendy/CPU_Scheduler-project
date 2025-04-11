@@ -1,78 +1,9 @@
 import heapq
 import time
 import threading
-from abc import ABC, abstractmethod
+from Scheduler import Scheduler
+from Process import Process
 from typing import final
-
-# Original Process Class
-class Process:
-    def __init__(self, pid, arrivalTime, burstTime, priority=None):
-        if burstTime <= 0:
-            raise ValueError("Burst time must be positive")
-        else:
-            self.burstTime = burstTime
-        if arrivalTime < 0:
-            raise ValueError("Arrival time cannot be negative")
-        else:
-            self.arrivalTime = arrivalTime
-        
-        self.pid = pid
-        self.remaining_time = burstTime
-        self.priority = pid if priority is None else priority
-        self.waitingTime = 0
-        self.turnaroundTime = 0
-        self.completionTime = 0
-    
-    def isCompleted(self) -> bool:
-        # Check if the process has completed its execution
-        return self.remaining_time == 0
-
-
-# Original Scheduler Class
-class Scheduler(ABC):
-    def __init__(self):
-        self.occupying: list[int] = []  # Tracks the processes occupying the CPU at each time step
-        self.processes: list[Process] = []  # List of processes
-        self.currentTime: int = 0  # Tracks the current time
-
-    @final
-    def addProcess(self, process: Process) -> None:
-        # Add a new process to the scheduler
-        if not isinstance(process, Process):
-            raise TypeError("Expected a Process object")
-        if process.isCompleted():
-            raise ValueError("Process has already completed")
-        self.processes.append(process)
-    
-    @final
-    def calculateMetrics(self) -> tuple[float, float]:
-        # Calculate average waiting time and turnaround time
-        totalWaiting = 0.0
-        totalTurnaround = 0.0
-        for process in self.processes:
-            process.turnaroundTime = process.completionTime - process.arrivalTime
-            process.waitingTime = process.turnaroundTime - process.burstTime
-            totalWaiting += process.waitingTime
-            totalTurnaround += process.turnaroundTime
-        
-        avgWaiting = totalWaiting / len(self.processes)
-        avgTurnaround = totalTurnaround / len(self.processes)
-        return avgWaiting, avgTurnaround
-    
-    @abstractmethod
-    def scheduleStep(self) -> Process:  
-        raise NotImplementedError("Must implement in subclass")
-    
-    def allProcessesCompleted(self) -> bool:
-        # Check if all processes have completed
-        for process in self.processes:
-            if not process.isCompleted():
-                return False
-        return True
-
-    @abstractmethod
-    def update(self) -> None: 
-        raise NotImplementedError("Must implement in subclass")
 
 
 # Original PriorityScheduler Class (Inherits from Scheduler)
@@ -118,8 +49,8 @@ class PriorityScheduler(Scheduler):
         # Execute current process
         if self.currentProcess:
             self.occupying.append(self.currentProcess.pid)
-            self.currentProcess.remaining_time -= 1
-            if self.currentProcess.remaining_time == 0:
+            self.currentProcess.remainingTime -= 1
+            if self.currentProcess.remainingTime == 0:
                 self.currentProcess.completionTime = self.currentTime + 1
                 self.currentProcess = None
         else:

@@ -1,4 +1,4 @@
-from Scheduler import Scheduler
+from .Scheduler import Scheduler
 
 class RoundRobin(Scheduler):
     nextPID = 0
