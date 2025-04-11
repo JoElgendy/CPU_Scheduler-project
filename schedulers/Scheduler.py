@@ -47,9 +47,18 @@ class Scheduler(ABC):
     #    occupying = [1,1,1,1,1,2,2,3,3]
 
     def __init__(self):
-        self.occupying: list[int] = []
-        self.processes: list[Process] = []
+        self.occupying: list[int] = []      #Described above
+        self.processes: list[Process] = []  #The initial processes given by the user
+        self.arrived: list[Process] = []    #This que contains all arrived processes and process with remaining time to be executed    
+        self.currentProcess: Process = None #Will contain the current process being executed
         self.currentTime: int = 0
+
+    def allProcessesCompleted(self) -> bool:
+    # Check if all processes have completed
+        for process in self.processes:
+            if not process.isCompleted():
+                return False
+        return True
 
     @final
     def addProcess(self, process: Process) -> None:
@@ -75,18 +84,18 @@ class Scheduler(ABC):
         avgTurnaround = totalTurnaround / len(self.processes)
         return avgWaiting, avgTurnaround
     
-    #This should return the process object to be selected to be given to the update
-    @abstractmethod
-    def scheduleStep(self) -> Process:  
-        raise NotImplementedError("Must implement in subclass")
-    
-
-    def allProcessesCompleted(self) -> bool:
-        # Check if all processes have completed
+    #This method pushes arrived processes into the arrived list and removes completed processes
+    #This will method will ease the algo implementation
+    @final
+    def arrivedHandler(self) -> None:
         for process in self.processes:
-            if not process.isCompleted():
-                return False
-        return True
+            if(process.arrivalTime == self.currentTime):
+                self.arrived.append(process)
+    
+    #This should save the process object in the variable current process to be selected to be given to the update
+    @abstractmethod
+    def scheduleStep(self) -> None:  
+        raise NotImplementedError("Must implement in subclass")   
 
     # This method will be called in the main loop of the scheduler
     # It will call the scheduleStep method to get the next process to run
@@ -96,3 +105,7 @@ class Scheduler(ABC):
     @abstractmethod
     def update(self) -> None: 
         raise NotImplementedError("Must implement in subclass")
+    
+
+    
+
