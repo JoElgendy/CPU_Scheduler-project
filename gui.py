@@ -191,7 +191,7 @@ class CPU_Scheduler_GUI:
         self.pid_incremental += 1
 
         is_at_valid, at = self.validate_positive_int_field(arrival, f"arrival time") if not is_live else (True, self.current_time + 1)
-        is_bt_valid, bt = self.validate_positive_int_field(burst, f"burst time")
+        is_bt_valid, bt = self.validate_positive_int_field(burst, f"burst time", force_positive=True)
         is_pr_valid, pr = self.validate_positive_int_field(priority, f"priority") if priority else (False, -1)
 
         if not is_bt_valid or not is_at_valid or (priority and not is_pr_valid):
@@ -299,17 +299,24 @@ class CPU_Scheduler_GUI:
         width = bbox[2] - bbox[0]
         canvas.coords(text_id, x - width / 2, y)
 
-    def validate_positive_int_field(self, field, field_name):
+    def validate_positive_int_field(self, field, field_name, force_positive=False):
         value = field.get()
         if not value:
             messagebox.showerror("Error", f"Please enter {field_name}")
             return False, -1
         try:
-            if int(value) >= 0:
-                return True, int(value)
+            if force_positive:
+                if int(value) > 0:
+                    return True, int(value)
+                else:
+                    messagebox.showerror("Error", f"{field_name} must be a positive number")
+                    return False, -1
             else:
-                messagebox.showerror("Error", f"{field_name} must be positive")
-                return False, -1
+                if int(value) >= 0:
+                    return True, int(value)
+                else:
+                    messagebox.showerror("Error", f"{field_name} must be positive or zero")
+                    return False, -1
         except ValueError:
             messagebox.showerror("Error", f"{field_name} must be a number")
             return False, -1
