@@ -1,7 +1,8 @@
 import heapq
 import time
 import threading
-from scheduler import Scheduler, Process
+from Scheduler import Scheduler
+from Process import Process
 from typing import final
 
 
