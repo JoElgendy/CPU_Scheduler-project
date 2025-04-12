@@ -1,6 +1,6 @@
 from typing import final
 from abc import ABC, abstractmethod
-from Process import Process
+from .Process import Process
 
 class Scheduler(ABC):
     #occupying 
