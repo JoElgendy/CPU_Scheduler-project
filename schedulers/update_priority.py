@@ -5,7 +5,7 @@ class PriorityScheduler(Scheduler):
     def __init__(self, preemptive: bool):
         super().__init__()
         self.preemptive = preemptive
-        
+
     def addProcess(self, process: Process) -> None:
         if process.burstTime == 0:
             print(f"Skipping Process {process.pid}: Burst time is zero.")
@@ -15,23 +15,26 @@ class PriorityScheduler(Scheduler):
         self.processes.append(process)
 
     def scheduleStep(self) -> None:
-        self.arrivedHandler()
+        # Remove completed processes
+        self.arrived = [p for p in self.arrived if not p.isCompleted()]
+        if not self.arrived:
+            return
 
-        if self.arrived:
-            self.arrived.sort(key=lambda p: p.priority)
+        self.arrived.sort(key=lambda p: p.priority)
 
-            if self.preemptive:
-                if self.currentProcess:
-                    if self.currentProcess.priority > self.arrived[0].priority:
-                        self.arrived.append(self.currentProcess)
-                        self.currentProcess = self.arrived.pop(0)
-                else:
+        if self.preemptive:
+            if self.currentProcess:
+                if self.currentProcess.priority > self.arrived[0].priority:
+                    self.arrived.append(self.currentProcess)
                     self.currentProcess = self.arrived.pop(0)
             else:
-                if not self.currentProcess:
-                    self.currentProcess = self.arrived.pop(0)
+                self.currentProcess = self.arrived.pop(0)
+        else:
+            if not self.currentProcess:
+                self.currentProcess = self.arrived.pop(0)
 
     def update(self) -> None:
+        self.arrivedHandler()
         self.scheduleStep()
 
         if self.currentProcess:
@@ -41,5 +44,7 @@ class PriorityScheduler(Scheduler):
             if self.currentProcess.isCompleted():
                 self.currentProcess.completionTime = self.currentTime + 1
                 self.currentProcess = None
+        else:
+            self.occupying.append(-1)
 
         self.currentTime += 1
