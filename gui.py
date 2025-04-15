@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from utils import generate_color
-from schedulers import Process, RoundRobin
+from schedulers import Process, RoundRobin, Priority, PreemptiveSJF, NonPreemptiveSJF
 
 class CPU_Scheduler_GUI:
     def __init__(self, root):
@@ -154,7 +154,20 @@ class CPU_Scheduler_GUI:
         self.reset_gantt_chart_frame()
 
         process_data = self.capture_processes_data()
-        scheduler = RoundRobin.RoundRobin(self.tq)
+
+        scheduler = None
+        if self.scheduler_type_var.get() == "Round Robin":
+            scheduler = RoundRobin.RoundRobin(self.tq)
+        elif self.scheduler_type_var.get() == "Priority Preemptive":
+            scheduler = Priority.Priority(True)
+        elif self.scheduler_type_var.get() == "Priority non_Preemptive":
+            scheduler = Priority.Priority()
+        elif self.scheduler_type_var.get() == "SJF Preemptive":
+            scheduler = PreemptiveSJF.PreemptiveSJF()
+        elif self.scheduler_type_var.get() == "SJF non_Preemptive":
+            scheduler = NonPreemptiveSJF.NonPreemptiveSJF()
+        # elif self.scheduler_type_var.get() == "FCFS":
+        #     scheduler = FCFS()
 
         for process in process_data:
             scheduler.addProcess(process)
