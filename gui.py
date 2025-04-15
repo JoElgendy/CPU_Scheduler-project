@@ -104,7 +104,7 @@ class CPU_Scheduler_GUI:
         self.reset_process_frame()
         self.generate_process_fields(num)
 
-        ttk.Button(self.process_frame, text="Add Processes", command=self.handle_processes_submit).pack(pady=10)
+        ttk.Button(self.process_frame, text="Run", command=self.handle_processes_submit).pack(pady=10)
         ttk.Button(self.process_frame, text="Go Back", command=lambda: self.notebook.select(self.scheduler_frame)).pack()
 
         self.notebook.select(self.process_frame)
@@ -218,6 +218,8 @@ class CPU_Scheduler_GUI:
 
         if len(self.tasks) > self.current_time:
             self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(scheduler))
+        else:
+            self.show_metrics(scheduler)
 
     def run_fast_gantt_chart(self, scheduler):
         while not scheduler.allProcessesCompleted():
@@ -226,6 +228,8 @@ class CPU_Scheduler_GUI:
         self.tasks = scheduler.occupying
         self.current_time = -1
         self.draw_gantt_chart()
+
+        self.show_metrics(scheduler)
 
     def draw_gantt_chart(self):
         canvas_height = 200
@@ -261,8 +265,14 @@ class CPU_Scheduler_GUI:
             return
 
         task_num = self.tasks[self.current_index]
-        task_name = "P" + str(task_num)
-        color = generate_color(task_num)
+
+        # Handle idle slot
+        if task_num == -1:
+            task_name = ""
+            color = "#d3d3d3"  # light gray
+        else:
+            task_name = "P" + str(task_num)
+            color = generate_color(task_num)
 
         x_start = x_offset + unit_width * self.current_index
         y_bottom = y_offset + bar_height
@@ -320,3 +330,31 @@ class CPU_Scheduler_GUI:
         except ValueError:
             messagebox.showerror("Error", f"{field_name} must be a number")
             return False, -1
+
+    def show_metrics(self, scheduler):
+        avg_waiting, avg_turnaround = scheduler.calculateMetrics()
+        # Get the current height of the Gantt chart contents
+        chart_bbox = self.gantt_canvas.bbox("all")  # returns (x1, y1, x2, y2)
+        if chart_bbox:
+            _, _, _, y_bottom = chart_bbox
+        else:
+            y_bottom = 60  # default fallback if bbox is None
+
+        text_y_offset = y_bottom + 20  # spacing below chart
+        x_offset = 10
+
+        self.gantt_canvas.create_text(
+            x_offset, text_y_offset, anchor="nw",
+            text=f"Average Waiting Time: {avg_waiting:.2f}",
+            font=("Helvetica", 10, "bold"),
+            fill="blue"
+        )
+
+        self.gantt_canvas.create_text(
+            x_offset, text_y_offset + 20, anchor="nw",
+            text=f"Average Turnaround Time: {avg_turnaround:.2f}",
+            font=("Helvetica", 10, "bold"),
+            fill="blue"
+        )
+
+
