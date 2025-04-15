@@ -10,7 +10,7 @@ class PreemptiveSJF(Scheduler):
         for process in self.processes:
             if not process.isCompleted():
                 return False
-        for process in self.arrived : 
+        for process in self.arrived: 
             if process.remainingTime>0: 
                 return False
         return True
@@ -18,7 +18,6 @@ class PreemptiveSJF(Scheduler):
         for proc in self.processes:
             if proc.arrivalTime == self.time: 
                 self.arrived.append(proc)
-                self.processes.remove(proc)
             # else : 
                 # proc.arrivalTime-=1
         self.arrived.sort() # will sort 

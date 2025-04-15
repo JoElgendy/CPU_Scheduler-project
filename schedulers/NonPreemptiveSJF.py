@@ -21,7 +21,6 @@ class NonPreemptiveSJF(Scheduler):
         for process in self.processes [:]: 
             if process.arrivalTime ==  self.time : 
                 self.arrived.append(process)
-                self.processes.remove(process)
 
         try : 
             if self.arrived[0].remainingTime == 0:  # el process ely kant shaghala da a5r time frame w mafrood a7awl 
