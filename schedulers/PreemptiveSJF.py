@@ -26,7 +26,7 @@ class PreemptiveSJF(Scheduler):
             
             self.arrived[0].remainingTime -= 1
             if(self.arrived[0].isCompleted()) :
-                self.arrived[0].completionTime=self.time
+                self.arrived[0].completionTime = self.time + 1
                 self.completed.append(self.arrived.pop(0))
             # pass
         except: 
