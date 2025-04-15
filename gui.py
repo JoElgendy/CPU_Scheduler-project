@@ -9,7 +9,7 @@ class CPU_Scheduler_GUI:
         self.root.title("CPU Scheduler")
         self.root.geometry("800x600")
         self.root.config(bg="#f0f0f0")
-        self.scheduler=None
+
         self.processes = []
         self.tasks = []
         self.priority_frame = None
@@ -91,9 +91,9 @@ class CPU_Scheduler_GUI:
         return entry
 
     def show_process_page(self):
-        self.scheduler = self.scheduler_type_var.get()
+        scheduler = self.scheduler_type_var.get()
 
-        if not self.scheduler:
+        if not scheduler:
             messagebox.showerror("Error", "Please select a scheduler type.")
             return
 
@@ -154,15 +154,15 @@ class CPU_Scheduler_GUI:
         self.reset_gantt_chart_frame()
 
         process_data = self.capture_processes_data()
-        self.scheduler = RoundRobin.RoundRobin(self.tq)
+        scheduler = RoundRobin.RoundRobin(self.tq)
 
         for process in process_data:
-            self.scheduler.addProcess(process)
+            scheduler.addProcess(process)
 
         self.notebook.select(self.gantt_chart_frame)
 
         if self.live_mode_var.get():
-            self.run_live_gantt_chart(self.scheduler)
+            self.run_live_gantt_chart(scheduler)
 
             frame = ttk.Frame(self.gantt_chart_frame)
             live_fields = self.populate_process_fields(frame, is_live=True)
@@ -171,10 +171,10 @@ class CPU_Scheduler_GUI:
             ttk.Button(
                 self.gantt_chart_frame,
                 text="Add Process",
-                command=lambda: self.scheduler.addProcess(self.capture_process_data(live_fields, is_live=True, reset=True))
+                command=lambda: scheduler.addProcess(self.capture_process_data(live_fields, is_live=True, reset=True))
             ).pack(pady=10)
         else:
-            self.run_fast_gantt_chart(self.scheduler)
+            self.run_fast_gantt_chart(scheduler)
 
     def capture_processes_data(self):
         self.pid_incremental = 0
@@ -205,11 +205,10 @@ class CPU_Scheduler_GUI:
         return Process.Process(self.pid_incremental, at, bt, pr)
 
     def run_live_gantt_chart(self, scheduler):
-        if not self.scheduler.allProcessesCompleted():
-            self.scheduler.scheduleStep()
-        
+        if not scheduler.allProcessesCompleted():
+            scheduler.scheduleStep()
 
-        self.tasks = self.scheduler.occupying
+        self.tasks = scheduler.occupying
         self.current_time += 1
 
         if self.gantt_canvas:
@@ -218,18 +217,19 @@ class CPU_Scheduler_GUI:
         self.draw_gantt_chart()
 
         if len(self.tasks) > self.current_time:
-            self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(self.scheduler))
+            self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(scheduler))
         else:
-            self.show_metrics(self.scheduler)
+            self.show_metrics(scheduler)
 
     def run_fast_gantt_chart(self, scheduler):
         while not scheduler.allProcessesCompleted():
-            self.scheduler.scheduleStep()
+            scheduler.scheduleStep()
 
-        self.tasks = self.scheduler.occupying
+        self.tasks = scheduler.occupying
         self.current_time = -1
         self.draw_gantt_chart()
-        self.show_metrics(self.scheduler)
+
+        self.show_metrics(scheduler)
 
     def draw_gantt_chart(self):
         canvas_height = 200
@@ -253,14 +253,14 @@ class CPU_Scheduler_GUI:
             self.gantt_canvas.pack()
 
         self.animate_task_block(x_offset, y_offset, unit_width, self.current_time == self.current_index)
-        
+
     def animate_task_block(self, x_offset, y_offset, unit_width, enable_animation=True):
         frame_delay_ms = 5 if enable_animation else 1
         animation_duration_ms = self.gantt_time_unit if enable_animation else 1
         time_text_font = ("Helvetica", 8)
         process_text_font = ("Helvetica", 10)
         bar_height = 30
-        # scheduler = RoundRobin.RoundRobin(self.tq)
+
         if self.current_index >= len(self.tasks):
             return
 
@@ -268,7 +268,7 @@ class CPU_Scheduler_GUI:
 
         # Handle idle slot
         if task_num == -1:
-            task_name = " "
+            task_name = ""
             color = "#d3d3d3"  # light gray
         else:
             task_name = "P" + str(task_num)
@@ -288,15 +288,12 @@ class CPU_Scheduler_GUI:
                 self.gantt_canvas.coords(rect, x_start, y_offset, x_start + unit_width, y_bottom)
                 self.gantt_canvas.delete(temp_text)
                 self.create_centered_canvas_text(task_name, self.gantt_canvas,
-                                                x_start + unit_width / 2, y_offset + 15,
-                                                font=process_text_font)
+                                                 x_start + unit_width / 2, y_offset + 15,
+                                                 font=process_text_font)
                 self.create_centered_canvas_text(self.current_index + 1, self.gantt_canvas,
-                                                x_start + unit_width, y_bottom + 10,
-                                                font=time_text_font, fill="gray")
+                                                 x_start + unit_width, y_bottom + 10,
+                                                 font=time_text_font, fill="gray")
                 self.current_index += 1
-                # if self.current_index >= len(self.tasks) and self.scheduler.allProcessesCompleted:
-                #     self.show_metrics(self.scheduler)  # ← Add this line
-                # else:
                 self.gantt_canvas.after(1, lambda: self.animate_task_block(x_offset, y_offset, unit_width, self.current_time == self.current_index))
             else:
                 w = step * pixels_per_step
@@ -305,7 +302,7 @@ class CPU_Scheduler_GUI:
                 self.gantt_canvas.after(frame_delay_ms, lambda: expand(step + 1))
 
         expand()
-       
+
     def create_centered_canvas_text(self, text, canvas, x, y, font=("Helvetica", 10), fill="black"):
         text_id = canvas.create_text(x, y, anchor="w", text=text, font=font, fill=fill)
         bbox = canvas.bbox(text_id)
@@ -333,6 +330,7 @@ class CPU_Scheduler_GUI:
         except ValueError:
             messagebox.showerror("Error", f"{field_name} must be a number")
             return False, -1
+
     def show_metrics(self, scheduler):
         avg_waiting, avg_turnaround = scheduler.calculateMetrics()
         # Get the current height of the Gantt chart contents
