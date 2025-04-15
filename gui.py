@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from utils import generate_color
-from schedulers import Process, RoundRobin, Priority, PreemptiveSJF, NonPreemptiveSJF
+from schedulers import Process, RoundRobin, Priority, PreemptiveSJF, NonPreemptiveSJF, FCFS
 
 class CPU_Scheduler_GUI:
     def __init__(self, root):
@@ -166,8 +166,8 @@ class CPU_Scheduler_GUI:
             scheduler = PreemptiveSJF.PreemptiveSJF()
         elif self.scheduler_type_var.get() == "SJF non_Preemptive":
             scheduler = NonPreemptiveSJF.NonPreemptiveSJF()
-        # elif self.scheduler_type_var.get() == "FCFS":
-        #     scheduler = FCFS()
+        elif self.scheduler_type_var.get() == "FCFS":
+            scheduler = FCFS.FCFS()
 
         for process in process_data:
             scheduler.addProcess(process)
