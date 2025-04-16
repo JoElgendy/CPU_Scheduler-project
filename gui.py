@@ -246,15 +246,15 @@ class CPU_Scheduler_GUI:
 
     def draw_gantt_chart(self):
         canvas_height = 200
-        canvas_width = 600
+        canvas_width = 720
         y_offset = 70
         x_offset = 10
-        max_visible_time_units = 10
+        init_time_units = 10
 
         self.current_index = 0
         total_tasks = len(self.tasks)
 
-        unit_width = (canvas_width - 2 * x_offset) / total_tasks if total_tasks > max_visible_time_units else 50
+        unit_width = (canvas_width - 2 * x_offset) / total_tasks if total_tasks > init_time_units else (canvas_width - 2 * x_offset) / init_time_units
 
         if not self.gantt_canvas:
             self.gantt_canvas = tk.Canvas(
