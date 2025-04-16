@@ -244,7 +244,7 @@ class CPU_Scheduler_GUI:
 
         if len(self.tasks) > self.current_time:
             self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(scheduler))
-            self.update_table(scheduler)
+            self.update_table(scheduler, is_live=True)
         else:
             self.show_metrics(scheduler)
 
@@ -361,6 +361,7 @@ class CPU_Scheduler_GUI:
 
     def show_metrics(self, scheduler):
         spacing_below_chart = 30
+        text_color = "#333333"
 
         avg_waiting, avg_turnaround = scheduler.calculateMetrics()
         # Get the current height of the Gantt chart contents
@@ -377,22 +378,27 @@ class CPU_Scheduler_GUI:
             x_offset, text_y_offset, anchor="nw",
             text=f"Average Waiting Time: {avg_waiting:.2f}",
             font=("Helvetica", 10, "bold"),
-            fill="#333333"
+            fill=text_color
         )
 
         self.gantt_canvas.create_text(
             x_offset, text_y_offset + 20, anchor="nw",
             text=f"Average Turnaround Time: {avg_turnaround:.2f}",
             font=("Helvetica", 10, "bold"),
-            fill="#333333"
+            fill=text_color
         )
 
-    def update_table(self, scheduler):
-        # Clear old table if it exists
+    def update_table(self, scheduler, is_live=False):
+        is_priority = self.scheduler_type_var.get() in ["Priority Preemptive", "Priority non_Preemptive"]
+
+        columns = ["PID", "Arrival Time", "Burst Time", "Remaining Time"]
+        if is_priority:
+            columns.append("Priority")
+
+        column_width = int(400 / len(columns)) if is_live else int(740 / len(columns))
+
         if hasattr(self, "result_table"):
             self.result_table.destroy()
-
-        columns = ("PID", "Arrival Time", "Burst Time", "Remaining Time")
         
         self.result_table = ttk.Treeview(
             self.gantt_frame_top_half,
@@ -404,14 +410,23 @@ class CPU_Scheduler_GUI:
         # Define headings
         for col in columns:
             self.result_table.heading(col, text=col)
-            self.result_table.column(col, width=100, anchor='center')
+            self.result_table.column(col, width=column_width, anchor='center')
 
         self.result_table.grid(row=0, column=0, pady=10, sticky="ew")
 
         for process in scheduler.processes:
-            self.result_table.insert('', 'end', values=(
-                f"P{process.pid}",
-                process.arrivalTime,
-                process.burstTime,
-                process.remainingTime
-            ))
+            if is_priority:
+                self.result_table.insert('', 'end', values=(
+                    f"P{process.pid}",
+                    process.arrivalTime,
+                    process.burstTime,
+                    process.remainingTime,
+                    process.priority
+                ))
+            else:
+                self.result_table.insert('', 'end', values=(
+                    f"P{process.pid}",
+                    process.arrivalTime,
+                    process.burstTime,
+                    process.remainingTime
+                ))
