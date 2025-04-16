@@ -1,48 +1,58 @@
 from .Scheduler import Scheduler
 
 class FCFS(Scheduler):
-    nextPID = 0
 
     def __init__(self):
         super().__init__()
         self.idle = False
+        self.first = True
 
     def processToBeExecuted(self):
         while True:
 
-            # Remove the completed process
-            if(self.currentProcess.isCompleted()):
-                try:
-                    self.arrived.remove(self.currentProcess)
-                except:
-                    pass
+            if not self.arrived:
+                self.currentTime += 1
+                self.occupying.append(-1)
+                self.idle = True
+                return
+            else:
+                self.idle = False
+                # Remove the completed process
+                if(self.currentProcess.isCompleted()) :
+                    try:
+                        self.arrived.remove(self.currentProcess)
+                    except:
+                        pass
 
-            # Check if the next PID is in the arrived processes
-            matchingProcess = next((p for p in self.arrived if p.pid == self.nextPID), None)
+                if len(self.arrived) != 0 :
+                    matchingProcess = self.arrived[0]
+                else :
+                    matchingProcess = None
 
-            # If a matching process is found, update the current process
-            if matchingProcess is not None:
-                self.currentProcess = matchingProcess
-                self.nextPID += 1  
-                break
 
-            self.nextPID += 1      
-    
+                # If a matching process is found, update the current process
+                if matchingProcess is not None :
+                    self.currentProcess = matchingProcess
+                    break
 
     def scheduleStep(self):
         super().arrivedHandler()
-        if(self.currentTime == 0) or self.idle == True:
+        if ((self.currentTime == 0) or self.idle == True) and self.first :
             try:
                 self.currentProcess = self.arrived[0]
-                self.nextPID = self.currentProcess.pid + 1
                 self.idle = False
+                self.first = False
             except:
-                self.idle = True
                 self.currentTime += 1
+                self.occupying.append(-1)
+                self.idle = True
+                self.first = True
                 return
-            
+
         if self.currentProcess is not None and (self.currentProcess.isCompleted()):
             self.processToBeExecuted()
+            if self.idle:
+                return
 
         if self.currentProcess is not None:
             self.update()
