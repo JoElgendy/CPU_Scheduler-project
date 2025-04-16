@@ -65,16 +65,14 @@ class CPU_Scheduler_GUI:
         self.next_button.pack(pady=10)
 
     def create_process_tab(self):
-        self.process_label = ttk.Label(
+        ttk.Label(
             self.process_frame, text="Enter Processes Data:", font=("Arial", 14)
-        )
-        self.process_label.pack(pady=10)
+        ).pack(pady=10)
 
     def create_gantt_chart_tab(self):
-        self.process_label = ttk.Label(
+        ttk.Label(
             self.gantt_chart_frame, text="Gantt Chart:", font=("Arial", 14)
-        )
-        self.process_label.pack(pady=10)
+        ).grid(row=0, column=0, pady=10)
 
     def add_labeled_combobox(self, parent, label_text, var, values, row):
         label = ttk.Label(parent, text=label_text, font=("Arial", 12))
@@ -133,10 +131,15 @@ class CPU_Scheduler_GUI:
             frame.pack(pady=10)
             self.processes.append(entries)
 
-    def populate_process_fields(self, frame, pid="", is_live=False):
-        at = self.create_entry_field(frame, f"Arrival Time for Process {pid}:", 0) if not is_live else None
-        bt = self.create_entry_field(frame, f"Burst Time for Process {pid}:", 1 if not is_live else 0)
-        pr = self.create_entry_field(frame, f"Priority for Process {pid}:", 2 if not is_live else 1) if self.scheduler_type_var.get() in ["Priority Preemptive", "Priority non_Preemptive"] else None
+    def populate_process_fields(self, frame, pid=None, is_live=False):
+        priority_field_text = f"Process {pid} Priority:" if pid else "Process Priority:"
+        burst_time_field_text = f"Process {pid} Burst Time:" if pid else "Process Burst Time:"
+        arrival_time_field_text = f"Process {pid} Arrival Time:" if pid else "Process Arrival Time:"
+
+        at = self.create_entry_field(frame, arrival_time_field_text, 0) if not is_live else None
+        bt = self.create_entry_field(frame, burst_time_field_text, 1 if not is_live else 0)
+        pr = self.create_entry_field(frame, priority_field_text, 2 if not is_live else 1) if self.scheduler_type_var.get() in ["Priority Preemptive", "Priority non_Preemptive"] else None
+
         return at, bt, pr
 
     def create_entry_field(self, parent, label_text, row):
@@ -159,9 +162,9 @@ class CPU_Scheduler_GUI:
         if self.scheduler_type_var.get() == "Round Robin":
             scheduler = RoundRobin.RoundRobin(self.tq)
         elif self.scheduler_type_var.get() == "Priority Preemptive":
-            scheduler = Priority.Priority(True)
+            scheduler = Priority.PriorityScheduler(True)
         elif self.scheduler_type_var.get() == "Priority non_Preemptive":
-            scheduler = Priority.Priority()
+            scheduler = Priority.PriorityScheduler()
         elif self.scheduler_type_var.get() == "SJF Preemptive":
             scheduler = PreemptiveSJF.PreemptiveSJF()
         elif self.scheduler_type_var.get() == "SJF non_Preemptive":
@@ -173,19 +176,29 @@ class CPU_Scheduler_GUI:
             scheduler.addProcess(process)
 
         self.notebook.select(self.gantt_chart_frame)
+        self.gantt_frame_top_half = ttk.Frame(self.gantt_chart_frame)
+        self.gantt_frame_top_half.grid(row=1, column=0, sticky="ew")
 
         if self.live_mode_var.get():
             self.run_live_gantt_chart(scheduler)
 
-            frame = ttk.Frame(self.gantt_chart_frame)
+            gantt_frame_top_right = ttk.Frame(self.gantt_frame_top_half)
+
+            ttk.Label(
+                gantt_frame_top_right, text="Enter New Process:", font=("Arial", 14)
+            ).pack(pady=10)
+
+            frame = ttk.Frame(gantt_frame_top_right)
             live_fields = self.populate_process_fields(frame, is_live=True)
             frame.pack(pady=10)
 
             ttk.Button(
-                self.gantt_chart_frame,
+                gantt_frame_top_right,
                 text="Add Process",
                 command=lambda: scheduler.addProcess(self.capture_process_data(live_fields, is_live=True, reset=True))
             ).pack(pady=10)
+
+            gantt_frame_top_right.grid(row=0, column=1, pady=10, padx=10, sticky="ew")
         else:
             self.run_fast_gantt_chart(scheduler)
 
@@ -231,6 +244,7 @@ class CPU_Scheduler_GUI:
 
         if len(self.tasks) > self.current_time:
             self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(scheduler))
+            self.update_table(scheduler)
         else:
             self.show_metrics(scheduler)
 
@@ -243,18 +257,19 @@ class CPU_Scheduler_GUI:
         self.draw_gantt_chart()
 
         self.show_metrics(scheduler)
+        self.update_table(scheduler)
 
     def draw_gantt_chart(self):
         canvas_height = 200
-        canvas_width = 600
+        canvas_width = 732
         y_offset = 70
         x_offset = 10
-        max_visible_time_units = 10
+        init_time_units = 10
 
         self.current_index = 0
         total_tasks = len(self.tasks)
 
-        unit_width = (canvas_width - 2 * x_offset) / total_tasks if total_tasks > max_visible_time_units else 50
+        unit_width = (canvas_width - 2 * x_offset) / total_tasks if total_tasks > init_time_units else (canvas_width - 2 * x_offset) / init_time_units
 
         if not self.gantt_canvas:
             self.gantt_canvas = tk.Canvas(
@@ -263,7 +278,7 @@ class CPU_Scheduler_GUI:
                 height=canvas_height,
                 bg="white"
             )
-            self.gantt_canvas.pack()
+            self.gantt_canvas.grid(row=2, column=0, sticky="ew")
 
         self.animate_task_block(x_offset, y_offset, unit_width, self.current_time == self.current_index)
 
@@ -345,6 +360,8 @@ class CPU_Scheduler_GUI:
             return False, -1
 
     def show_metrics(self, scheduler):
+        spacing_below_chart = 30
+
         avg_waiting, avg_turnaround = scheduler.calculateMetrics()
         # Get the current height of the Gantt chart contents
         chart_bbox = self.gantt_canvas.bbox("all")  # returns (x1, y1, x2, y2)
@@ -353,21 +370,48 @@ class CPU_Scheduler_GUI:
         else:
             y_bottom = 60  # default fallback if bbox is None
 
-        text_y_offset = y_bottom + 20  # spacing below chart
+        text_y_offset = y_bottom + spacing_below_chart
         x_offset = 10
 
         self.gantt_canvas.create_text(
             x_offset, text_y_offset, anchor="nw",
             text=f"Average Waiting Time: {avg_waiting:.2f}",
             font=("Helvetica", 10, "bold"),
-            fill="blue"
+            fill="#333333"
         )
 
         self.gantt_canvas.create_text(
             x_offset, text_y_offset + 20, anchor="nw",
             text=f"Average Turnaround Time: {avg_turnaround:.2f}",
             font=("Helvetica", 10, "bold"),
-            fill="blue"
+            fill="#333333"
         )
 
+    def update_table(self, scheduler):
+        # Clear old table if it exists
+        if hasattr(self, "result_table"):
+            self.result_table.destroy()
 
+        columns = ("PID", "Arrival Time", "Burst Time", "Remaining Time")
+        
+        self.result_table = ttk.Treeview(
+            self.gantt_frame_top_half,
+            columns=columns,
+            show='headings',
+            height=10
+        )
+
+        # Define headings
+        for col in columns:
+            self.result_table.heading(col, text=col)
+            self.result_table.column(col, width=100, anchor='center')
+
+        self.result_table.grid(row=0, column=0, pady=10, sticky="ew")
+
+        for process in scheduler.processes:
+            self.result_table.insert('', 'end', values=(
+                f"P{process.pid}",
+                process.arrivalTime,
+                process.burstTime,
+                process.remainingTime
+            ))
