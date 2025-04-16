@@ -244,7 +244,7 @@ class CPU_Scheduler_GUI:
 
         if len(self.tasks) > self.current_time:
             self.gantt_chart_frame.after(self.gantt_time_unit + 200, lambda: self.run_live_gantt_chart(scheduler))
-            self.update_table(scheduler)
+            self.update_table(scheduler, is_live=True)
         else:
             self.show_metrics(scheduler)
 
@@ -387,12 +387,12 @@ class CPU_Scheduler_GUI:
             fill="#333333"
         )
 
-    def update_table(self, scheduler):
-        # Clear old table if it exists
+    def update_table(self, scheduler, is_live=False):
+        columns = ("PID", "Arrival Time", "Burst Time", "Remaining Time")
+        column_width = 100 if is_live else int(740 / len(columns))
+
         if hasattr(self, "result_table"):
             self.result_table.destroy()
-
-        columns = ("PID", "Arrival Time", "Burst Time", "Remaining Time")
         
         self.result_table = ttk.Treeview(
             self.gantt_frame_top_half,
@@ -404,7 +404,7 @@ class CPU_Scheduler_GUI:
         # Define headings
         for col in columns:
             self.result_table.heading(col, text=col)
-            self.result_table.column(col, width=100, anchor='center')
+            self.result_table.column(col, width=column_width, anchor='center')
 
         self.result_table.grid(row=0, column=0, pady=10, sticky="ew")
 
