@@ -14,6 +14,7 @@ class RoundRobin(Scheduler):
             #Check if the CPU's state is idle
             if not self.arrived:
                 if not self.arrived:
+                    self.currentProcess = None
                     self.currentTime += 1
                     self.occupying.append(-1)
                     self.idle = True
@@ -24,8 +25,10 @@ class RoundRobin(Scheduler):
                     return
             else:
                 self.idle = False
+                if(len(self.arrived) == 1):
+                    self.currentProcess = self.arrived[0]
                 # Check if the current process is the one with the max PID
-                if (max(self.arrived, key=lambda p: p.pid).pid == self.currentProcess.pid):
+                if self.currentProcess is not None and (max(self.arrived, key=lambda p: p.pid).pid == self.currentProcess.pid):
                 # Set the next PID to the min PID in the arrived processes
                     self.nextPID = min(self.arrived, key=lambda p: p.pid).pid
                     
@@ -62,11 +65,13 @@ class RoundRobin(Scheduler):
                 self.first = True
                 return
 
-        if self.currentProcess is not None and (self.currentProcess.isCompleted() or self.remainQuantumTime == 0):
+        if self.currentProcess is None or self.currentProcess.isCompleted() or self.remainQuantumTime == 0:
             self.processToBeExecuted()
-            if self.idle:
+            if self.currentProcess is None:
+                self.idle = True
                 return
             self.remainQuantumTime = self.quantumTime
+
 
         if self.currentProcess is not None:
             self.update()
