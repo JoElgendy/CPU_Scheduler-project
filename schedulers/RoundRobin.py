@@ -33,7 +33,7 @@ class RoundRobin(Scheduler):
                     self.nextPID = min(self.arrived, key=lambda p: p.pid).pid
                     
                 # Remove the completed process
-                if(self.currentProcess.isCompleted()):
+                if(self.currentProcess is not None and self.currentProcess.isCompleted()):
                     try:
                         self.arrived.remove(self.currentProcess)
                     except:
